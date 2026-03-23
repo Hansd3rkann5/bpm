@@ -21,9 +21,11 @@ body {
   overflow: hidden;
   touch-action: manipulation;
   background-color: #011623;
+  user-select: none;
 }
 
 body {
+  user-select: none;
   font-family: "Avenir Next Condensed", "Trebuchet MS", "Futura", "Helvetica Neue", sans-serif;
   color: var(--text-main);
   background:
@@ -33,11 +35,13 @@ body {
 
 #rippleCanvas,
 #tapZone {
+  user-select: none;
   position: fixed;
   inset: 0;
 }
 
 #tapZone {
+  user-select: none;
   z-index: 2;
   padding:
     max(1rem, env(safe-area-inset-top))
@@ -47,6 +51,7 @@ body {
 }
 
 #resetButton {
+  user-select: none;
   position: absolute;
   left: 50%;
   bottom: max(1rem, env(safe-area-inset-bottom));
@@ -99,6 +104,7 @@ body {
 }
 
 #bpmValue {
+  user-select: none;
   margin: 0;
   line-height: 0.95;
   font-size: clamp(4.8rem, 24vw, 11rem);
@@ -110,6 +116,7 @@ body {
 }
 
 .bpm-label {
+  user-select: none;
   margin: 0.3rem 0 0;
   font-size: clamp(1rem, 4.5vw, 1.8rem);
   letter-spacing: 0.34em;
@@ -117,6 +124,7 @@ body {
 }
 
 #hint {
+  user-select: none;
   margin: 0;
   position: absolute;
   left: 50%;
