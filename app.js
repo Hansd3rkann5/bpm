@@ -160,5 +160,9 @@ resetButton.addEventListener("animationend", () => {
 
 window.addEventListener("resize", resizeCanvas);
 
+document.addEventListener("dblclick", (event) => {
+  event.preventDefault();
+}, { passive: false });
+
 resizeCanvas();
 resetBpm();
