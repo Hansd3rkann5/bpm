@@ -1,7 +1,9 @@
 {
   "name": "Water BPM Tapper",
   "short_name": "BPM Tapper",
-  "start_url": "/",
+  "id": "/bpm/",
+  "start_url": "/bpm/",
+  "scope": "/bpm/",
   "display": "standalone",
   "background_color": "#011623",
   "theme_color": "#011623",
