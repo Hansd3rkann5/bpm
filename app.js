@@ -2,11 +2,14 @@ const tapZone = document.getElementById("tapZone");
 const resetButton = document.getElementById("resetButton");
 const bpmValue = document.getElementById("bpmValue");
 const hint = document.getElementById("hint");
+const resetCountdown = document.getElementById("resetCountdown");
+const resetCountdownFill = document.getElementById("resetCountdownFill");
 const canvas = document.getElementById("rippleCanvas");
 const ctx = canvas.getContext("2d", { desynchronized: true });
 
-const MAX_TAPS = 10;
-const INACTIVITY_RESET_MS = 2000;
+const MAX_TAPS = 100;
+const INACTIVITY_BEFORE_COUNTDOWN_MS = 1000;
+const RESET_COUNTDOWN_MS = 2000;
 const MAX_RIPPLES = 8;
 const MAX_RENDER_DPR = 3;
 
@@ -15,6 +18,9 @@ let lastTapTime = 0;
 let canvasWidth = 0;
 let canvasHeight = 0;
 let animationFrameId = 0;
+let inactivityTimerId = 0;
+let resetCountdownFrameId = 0;
+let resetCountdownStartedAt = 0;
 
 const ripples = [];
 
@@ -38,17 +44,65 @@ function resizeCanvas() {
 }
 
 function resetBpm() {
+  stopResetCountdown();
   taps = [];
   lastTapTime = 0;
   bpmValue.textContent = "--.-";
   hint.textContent = "";
 }
 
-function pushTap(timestampMs) {
-  if (lastTapTime && timestampMs - lastTapTime > INACTIVITY_RESET_MS) {
-    taps = [];
+function setResetBarProgress(progress) {
+  const clamped = Math.max(0, Math.min(1, progress));
+  resetCountdownFill.style.transform = `scaleX(${clamped})`;
+}
+
+function stopResetCountdown() {
+  if (inactivityTimerId) {
+    window.clearTimeout(inactivityTimerId);
+    inactivityTimerId = 0;
   }
 
+  if (resetCountdownFrameId) {
+    window.cancelAnimationFrame(resetCountdownFrameId);
+    resetCountdownFrameId = 0;
+  }
+
+  resetCountdownStartedAt = 0;
+  resetCountdown.classList.remove("active");
+}
+
+function animateResetCountdown(now) {
+  const elapsed = now - resetCountdownStartedAt;
+  const progress = 1 - elapsed / RESET_COUNTDOWN_MS;
+  setResetBarProgress(progress);
+
+  if (elapsed >= RESET_COUNTDOWN_MS) {
+    resetBpm();
+    return;
+  }
+
+  resetCountdownFrameId = window.requestAnimationFrame(animateResetCountdown);
+}
+
+function startResetCountdown() {
+  resetCountdownStartedAt = performance.now();
+  setResetBarProgress(1);
+  resetCountdown.classList.add("active");
+  resetCountdownFrameId = window.requestAnimationFrame(animateResetCountdown);
+}
+
+function scheduleResetCountdown() {
+  if (inactivityTimerId) {
+    window.clearTimeout(inactivityTimerId);
+  }
+
+  inactivityTimerId = window.setTimeout(() => {
+    inactivityTimerId = 0;
+    startResetCountdown();
+  }, INACTIVITY_BEFORE_COUNTDOWN_MS);
+}
+
+function pushTap(timestampMs) {
   taps.push(timestampMs);
   lastTapTime = timestampMs;
 
@@ -138,7 +192,9 @@ function onTap(event) {
   }
 
   const timestampMs = performance.now();
+  stopResetCountdown();
   pushTap(timestampMs);
+  scheduleResetCountdown();
   addRipple(event.clientX, event.clientY);
 }
 
