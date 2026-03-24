@@ -3,13 +3,17 @@ const resetButton = document.getElementById("resetButton");
 const bpmValue = document.getElementById("bpmValue");
 const hint = document.getElementById("hint");
 const canvas = document.getElementById("rippleCanvas");
-const ctx = canvas.getContext("2d");
+const ctx = canvas.getContext("2d", { desynchronized: true });
 
 const MAX_TAPS = 10;
 const INACTIVITY_RESET_MS = 2000;
+const MAX_RIPPLES = 8;
 
 let taps = [];
 let lastTapTime = 0;
+let canvasWidth = 0;
+let canvasHeight = 0;
+let animationFrameId = 0;
 
 const ripples = [];
 
@@ -20,9 +24,12 @@ function playResetFeedback() {
 }
 
 function resizeCanvas() {
-  const dpr = window.devicePixelRatio || 1;
+  // Retina iPhones can be very expensive to repaint every frame.
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const width = window.innerWidth;
   const height = window.innerHeight;
+  canvasWidth = width;
+  canvasHeight = height;
   canvas.width = Math.round(width * dpr);
   canvas.height = Math.round(height * dpr);
   canvas.style.width = `${width}px`;
@@ -65,21 +72,24 @@ function pushTap(timestampMs) {
 }
 
 function addRipple(x, y) {
-  const now = performance.now();
+  if (ripples.length >= MAX_RIPPLES) {
+    ripples.shift();
+  }
+
   ripples.push({
     x,
     y,
-    createdAt: now,
-    lifeMs: 1200
+    createdAt: performance.now(),
+    lifeMs: 900
   });
+
+  if (!animationFrameId) {
+    animationFrameId = requestAnimationFrame(drawWaterSurface);
+  }
 }
 
-function drawWaterSurface() {
-  const width = canvas.clientWidth;
-  const height = canvas.clientHeight;
-  const now = performance.now();
-
-  ctx.clearRect(0, 0, width, height);
+function drawWaterSurface(now) {
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
   for (let i = ripples.length - 1; i >= 0; i -= 1) {
     const ripple = ripples[i];
@@ -92,8 +102,8 @@ function drawWaterSurface() {
     }
 
     const eased = 1 - Math.pow(1 - t, 2);
-    const radius = 15 + eased * 220;
-    const alpha = (1 - t) * 0.65;
+    const radius = 12 + eased * 185;
+    const alpha = (1 - t) * 0.62;
     const strokeWidth = 4 - eased * 3.2;
 
     ctx.beginPath();
@@ -102,14 +112,20 @@ function drawWaterSurface() {
     ctx.arc(ripple.x, ripple.y, radius, 0, Math.PI * 2);
     ctx.stroke();
 
-    const dropAlpha = (1 - t) * (1 - t) * 0.8;
-    ctx.beginPath();
-    ctx.fillStyle = `rgba(235, 255, 255, ${dropAlpha})`;
-    ctx.arc(ripple.x, ripple.y, Math.max(0, 4 - t * 5), 0, Math.PI * 2);
-    ctx.fill();
+    if (t < 0.45) {
+      const dropAlpha = (1 - t) * (1 - t) * 0.8;
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(235, 255, 255, ${dropAlpha})`;
+      ctx.arc(ripple.x, ripple.y, Math.max(0, 4 - t * 5), 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
-  requestAnimationFrame(drawWaterSurface);
+  if (ripples.length > 0) {
+    animationFrameId = requestAnimationFrame(drawWaterSurface);
+  } else {
+    animationFrameId = 0;
+  }
 }
 
 function onTap(event) {
@@ -146,4 +162,3 @@ window.addEventListener("resize", resizeCanvas);
 
 resizeCanvas();
 resetBpm();
-drawWaterSurface();
