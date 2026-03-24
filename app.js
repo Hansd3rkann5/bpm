@@ -8,6 +8,7 @@ const ctx = canvas.getContext("2d", { desynchronized: true });
 const MAX_TAPS = 10;
 const INACTIVITY_RESET_MS = 2000;
 const MAX_RIPPLES = 8;
+const MAX_RENDER_DPR = 3;
 
 let taps = [];
 let lastTapTime = 0;
@@ -24,8 +25,7 @@ function playResetFeedback() {
 }
 
 function resizeCanvas() {
-  // Retina iPhones can be very expensive to repaint every frame.
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = Math.min(window.devicePixelRatio || 1, MAX_RENDER_DPR);
   const width = window.innerWidth;
   const height = window.innerHeight;
   canvasWidth = width;
